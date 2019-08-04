@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
 import { IsAlphanumeric, IsEmail, MinLength, IsDefined, IsOptional } from 'class-validator';
 import { ApiModelProperty } from '@nestjs/swagger';
 import { CrudValidationGroups } from '@nestjsx/crud';
+import { Role } from '@/entities/role.entity';
 
 const { CREATE, UPDATE } = CrudValidationGroups;
 
@@ -38,4 +39,8 @@ export class User {
   @MinLength(8)
   @IsAlphanumeric()
   password: string;
+
+  @ManyToMany(type => Role, role => role.users)
+  @JoinTable()
+  roles: Role[];
 }

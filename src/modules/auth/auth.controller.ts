@@ -4,7 +4,9 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { AuthService } from './auth.service';
 import { AuthDto, CredentialsDto } from './models';
+import { Namespace, NamespaceList } from '@/decorators/namespace.decorator';
 
+@Namespace(NamespaceList.IAM)
 @Controller('auth')
 @ApiUseTags('auth')
 export class AuthController {

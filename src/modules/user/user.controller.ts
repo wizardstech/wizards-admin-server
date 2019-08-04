@@ -1,11 +1,16 @@
-import { Controller, Get, HttpStatus, Req, HttpException, UseGuards } from '@nestjs/common';
-import { Crud } from '@nestjsx/crud';
-
-import { User } from './models';
-import { UserService } from './user.service';
+import { Controller, Get, HttpStatus, Req, HttpException, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiUseTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { Crud, CrudRequestInterceptor, ParsedRequest, Feature, Action } from '@nestjsx/crud';
 
+import { User } from '@/entities/user.entity';
+import { UserService } from './user.service';
+import { ACLGuard } from '@/guards/acl.guard';
+import { Namespace, NamespaceList } from '@/decorators/namespace.decorator';
+import { Roles, RoleList } from '@/decorators/roles.decorator';
+import { getIAMGuards } from '@/helpers/get-iam-guards';
+
+@Namespace(NamespaceList.IAM)
 @Crud({
   model: {
     type: User,
@@ -18,7 +23,19 @@ import { AuthGuard } from '@nestjs/passport';
     },
   },
   query: {
-    exclude: ['password']
+    exclude: ['password'],
+    join: {
+      roles: {},
+      'roles.permissions': {}
+    }
+  },
+  routes: {
+    getManyBase: {
+      decorators: getIAMGuards([RoleList.SUPER_ADMIN])
+    },
+    getOneBase: {
+      decorators: getIAMGuards([RoleList.SUPER_ADMIN])
+    }
   }
 })
 @ApiUseTags('users')
@@ -32,7 +49,9 @@ export class UserController {
   @ApiOperation({ title: 'Get user information' })
   @ApiResponse({ status: HttpStatus.OK, description: 'success', type: User })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'unauthorized' })
-  async find(@Req() req): Promise<User> {
+  @UseInterceptors(CrudRequestInterceptor)
+  @Action('Read-Me')
+  async find(@ParsedRequest() req): Promise<User> {
     return this.service.findOne(req.user.userId);
   }
 }

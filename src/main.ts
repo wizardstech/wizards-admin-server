@@ -8,6 +8,10 @@ import * as csurf from 'csurf';
 
 import { Config } from './config';
 import { AppModule } from './app.module';
+import { UserModule } from './modules/user/user.module';
+import { UserController } from './modules/user/user.controller';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { getAction } from '@nestjsx/crud';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -23,7 +27,7 @@ async function bootstrap() {
   .setDescription('API for cortex project')
   .setVersion('1.0')
   .addTag('cortex')
-  .addBearerAuth()
+  .addBearerAuth('Authorization', 'header')
   .build();
 
   const document = SwaggerModule.createDocument(app, options);

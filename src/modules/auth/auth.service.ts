@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { flatten, uniq } from 'lodash';
 
 import { UserService } from '@/modules/user/user.service';
-import { User } from '@/modules/user/models';
+import { User } from '@/entities/user.entity';
+import { JWTPayload } from './models/jwt-payload';
 
 @Injectable()
 export class AuthService {
@@ -12,9 +14,7 @@ export class AuthService {
   ) {}
 
   async validateUser(username: string, password: string): Promise<any> {
-    console.log('username', username);
-    console.log('password', password);
-    const user = await this.userService.findOne({ username });
+    const user = await this.userService.findOne({ username }, { relations: ['roles', 'roles.permissions'] });
     if (user && user.password === password) {
       const { password, ...result } = user;
       return result;
@@ -23,8 +23,12 @@ export class AuthService {
   }
 
   async login(user: User) {
-    console.log('user', user)
-    const payload = { username: user.username, sub: user.id };
+    const payload: JWTPayload = {
+      username: user.username,
+      sub: user.id,
+      permissions: uniq(flatten(user.roles.map(role => role.permissions.map(permission => permission.name)))),
+    };
+
     return {
       access_token: this.jwtService.sign(payload),
     };
